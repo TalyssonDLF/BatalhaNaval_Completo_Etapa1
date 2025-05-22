@@ -112,4 +112,12 @@ public class Mapa {
             System.out.println();
         }
     }
+
+    public char[][] getVisivel() {
+        return mapaVisivel;
+    }
+    
+    public char[][] getInterno() {
+        return mapaInterno;
+    }
 }
