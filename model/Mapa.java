@@ -19,8 +19,8 @@ public class Mapa {
     private void inicializarMapas() {
         for (int i = 0; i < linhas; i++) {
             for (int j = 0; j < colunas; j++) {
-                mapaVisivel[i][j] = 'O'; // oculto
-                mapaInterno[i][j] = 'V'; // vazio
+                mapaVisivel[i][j] = 'O'; 
+                mapaInterno[i][j] = 'V'; 
             }
         }
     }
@@ -31,7 +31,7 @@ public class Mapa {
         while (tentativas < 100) {
             int x = rand.nextInt(linhas);
             int y = rand.nextInt(colunas);
-            int dir = rand.nextInt(3); // 0 = horizontal, 1 = vertical, 2 = diagonal
+            int dir = rand.nextInt(3);
 
             if (podeColocar(e, x, y, dir)) {
                 colocar(e, x, y, dir);

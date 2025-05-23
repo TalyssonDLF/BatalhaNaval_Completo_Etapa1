@@ -28,7 +28,10 @@ public class Cliente {
             autoPosicionar(jogador);
         }
 
-        try (Socket socket = new Socket("localhost", 12345)) {
+        System.out.print("Digite o IP do servidor: ");
+        String ipServidor = scanner.nextLine();
+
+        try (Socket socket = new Socket(ipServidor, 12345)) {
             System.out.println("Conectado ao servidor!");
 
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
