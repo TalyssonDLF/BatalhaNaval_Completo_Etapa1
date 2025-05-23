@@ -5,56 +5,82 @@ import model.*;
 
 public class Servidor {
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(12345)) {
-            System.out.println("Servidor iniciado. Aguardando jogador...");
-            Socket socket = serverSocket.accept();
-            System.out.println("Jogador conectado!");
+        Scanner entrada = new Scanner(System.in);
+        System.out.println("[ SERVIDOR - BATALHA NAVAL ]");
+        System.out.println("1. Novo Jogo");
+        System.out.println("2. Continuar Jogo Salvo");
+        System.out.print("Escolha: ");
+        int opcao = entrada.nextInt();
+        entrada.nextLine();
 
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            Scanner scanner = new Scanner(System.in);
-
-            Jogador jogador = new Jogador("Servidor", 10, 10);
+        Jogador jogador;
+        if (opcao == 2) {
+            jogador = Persistencia.carregarJogo("save_servidor.txt");
+            if (jogador == null) {
+                System.out.println("Falha ao carregar. Iniciando novo jogo...");
+                jogador = new Jogador("Servidor", 10, 10);
+                autoPosicionar(jogador);
+            } else {
+                System.out.println("Jogo carregado com sucesso!");
+            }
+        } else {
+            jogador = new Jogador("Servidor", 10, 10);
             autoPosicionar(jogador);
+        }
 
-            int pontos = 0;
+        try (ServerSocket serverSocket = new ServerSocket(12345);
+             Socket clientSocket = serverSocket.accept()) {
+
+            System.out.println("Cliente conectado!");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+            int pontos = jogador.getPontuacao();
 
             while (true) {
-                // === DEFESA ===
-                System.out.println("\nSeu mapa de embarcações:");
-                jogador.getMapa().exibirMapaInterno();
-
                 String ataque = in.readLine();
                 if (ataque == null || ataque.equals("fim")) break;
 
-                System.out.println("Jogador remoto atacou: " + ataque);
-
+                System.out.println("Cliente atacou: " + ataque);
                 int x = Integer.parseInt(ataque.split(",")[0]);
                 int y = Integer.parseInt(ataque.split(",")[1]);
 
                 boolean acerto = jogador.getMapa().atacar(x, y);
-                out.println(acerto ? "Acertou" : "Errou");
+                jogador.getMapa().exibirMapaInterno();
 
-                // === ATAQUE ===
+                out.println(acerto ? "Acertou" : "Errou");
+                Persistencia.salvarJogo(jogador, "save_servidor.txt");
+
                 System.out.println("\nSeu mapa de ataque:");
                 jogador.getMapa().exibirMapaVisivel();
 
-                System.out.print("Digite coordenadas para atacar (ex: 2,4): ");
-                String coords = scanner.nextLine();
-                out.println(coords);
+                System.out.print("Digite coordenadas para atacar (ex: 2,4) ou 'sair': ");
+                String coords = entrada.nextLine();
+                if (coords.equalsIgnoreCase("sair")) {
+                    out.println("fim");
+                    System.out.println("Encerrando...");
+                    break;
+                }
 
-                String result = in.readLine();
-                if (result == null || result.equals("fim")) break;
+                out.println(coords);
+                String resultado = in.readLine();
+                if (resultado == null || resultado.equals("fim")) break;
 
                 int ax = Integer.parseInt(coords.split(",")[0]);
                 int ay = Integer.parseInt(coords.split(",")[1]);
 
                 jogador.getMapa().getVisivel()[ax][ay] =
-                    result.equalsIgnoreCase("Acertou") ? 'X' : 'Y';
+                    resultado.equalsIgnoreCase("Acertou") ? 'X' : 'Y';
 
-                System.out.println("Resultado do seu ataque: " + result);
-                if (result.equalsIgnoreCase("Acertou")) pontos++;
+                if (resultado.equalsIgnoreCase("Acertou")) pontos++;
+
+                jogador.setPontuacao(pontos);
+                Persistencia.salvarJogo(jogador, "save_servidor.txt");
+
+                System.out.println("Resultado do ataque: " + resultado);
                 System.out.println("Pontuação atual: " + pontos);
+
                 if (pontos >= 5) {
                     System.out.println("Você venceu!");
                     out.println("fim");

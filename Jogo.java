@@ -5,6 +5,7 @@ import model.Embarcacao;
 import model.Fragata;
 import model.Jogador;
 import model.Mapa;
+import model.Persistencia;
 import model.PortaAvioes;
 import model.Submarino;
 
@@ -33,27 +34,41 @@ public class Jogo {
 
         System.out.println("\nJogo iniciado!\n");
 
+        executarTurnos(jogador1, jogador2);
+    }
+
+    public void continuarJogoSalvo() {
+        jogador1 = Persistencia.carregarJogo("save_jogador1.txt");
+        jogador2 = Persistencia.carregarJogo("save_jogador2.txt");
+
+        if (jogador1 != null && jogador2 != null) {
+            System.out.println("\nJogo restaurado com sucesso!");
+            executarTurnos(jogador1, jogador2);
+        } else {
+            System.out.println("Não foi possível carregar o jogo salvo.");
+        }
+    }
+
+    private void executarTurnos(Jogador jogador1, Jogador jogador2) {
         boolean fimDeJogo = false;
         Jogador atacante = jogador1;
         Jogador defensor = jogador2;
 
         while (!fimDeJogo) {
-            System.out.println("Vez de " + atacante.getNome());
-        
-            // SEMPRE mostrar o mapa visível (com O, X, Y)
+            System.out.println("\nVez de " + atacante.getNome());
+
             defensor.getMapa().exibirMapaVisivel();
-        
-            // Mostrar mapa real (interno) somente se for modo debug
+
             if (mostrarInimigo) {
                 System.out.println(">>> Mapa real do inimigo:");
                 defensor.getMapa().exibirMapaInterno();
             }
-        
+
             System.out.print("Digite a linha do ataque (0-" + (LINHAS - 1) + "): ");
             int x = scanner.nextInt();
             System.out.print("Digite a coluna do ataque (0-" + (COLUNAS - 1) + "): ");
             int y = scanner.nextInt();
-        
+
             boolean acerto = defensor.getMapa().atacar(x, y);
             if (acerto) {
                 System.out.println("\n>> ACERTOU!");
@@ -61,12 +76,18 @@ public class Jogo {
             } else {
                 System.out.println("\n>> Errou!");
             }
-        
+
+            System.out.println("Pontuação de " + atacante.getNome() + ": " + atacante.getPontuacao());
+
+            // Salvar o estado após cada jogada
+            Persistencia.salvarJogo(jogador1, "save_jogador1.txt");
+            Persistencia.salvarJogo(jogador2, "save_jogador2.txt");
+
             if (atacante.getPontuacao() >= 5) {
                 System.out.println("\n*** " + atacante.getNome() + " venceu o jogo! ***");
                 fimDeJogo = true;
             }
-        
+
             // Troca de turno
             Jogador temp = atacante;
             atacante = defensor;
@@ -94,22 +115,21 @@ public class Jogo {
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-    
+        Jogo jogo = new Jogo();
+
         while (true) {
             System.out.println("\n====== MENU BATALHA NAVAL ======");
             System.out.println("1. Jogo Offline (local)");
             System.out.println("2. Jogo Online - Host (Servidor)");
             System.out.println("3. Jogo Online - Conectar (Cliente)");
-            System.out.println("4. Sair");
+            System.out.println("4. Continuar jogo salvo");
+            System.out.println("5. Sair");
             System.out.print("Escolha uma opção: ");
             int opcao = sc.nextInt();
             sc.nextLine(); // limpar buffer
-    
+
             if (opcao == 1) {
-                System.out.println("\n[ MODO LOCAL INICIADO ]");
-                // Aqui você chama sua lógica local completa
-                // Exemplo: new JogoOffline().iniciar(false);
-                // Ou copie seu código de turnos diretamente aqui
+                jogo.iniciar(false);
             } else if (opcao == 2) {
                 System.out.println("\n[ MODO SERVIDOR ONLINE ]");
                 Servidor.main(null);
@@ -117,6 +137,8 @@ public class Jogo {
                 System.out.println("\n[ MODO CLIENTE ONLINE ]");
                 Cliente.main(null);
             } else if (opcao == 4) {
+                jogo.continuarJogoSalvo();
+            } else if (opcao == 5) {
                 System.out.println("Saindo...");
                 break;
             } else {

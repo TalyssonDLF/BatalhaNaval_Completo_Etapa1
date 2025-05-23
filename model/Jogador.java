@@ -15,4 +15,10 @@ public class Jogador {
     public int getPontuacao() { return pontuacao; }
     public void incrementarPontuacao() { pontuacao++; }
     public Mapa getMapa() { return mapa; }
+
+    public void setPontuacao(int p) {
+        this.pontuacao = p;
+    }
+
+    
 }

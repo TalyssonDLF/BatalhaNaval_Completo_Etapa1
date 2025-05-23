@@ -5,25 +5,50 @@ import model.*;
 
 public class Cliente {
     public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("[ CLIENTE - BATALHA NAVAL ]");
+        System.out.println("1. Novo Jogo");
+        System.out.println("2. Continuar Jogo Salvo");
+        System.out.print("Escolha: ");
+        int opcao = scanner.nextInt();
+        scanner.nextLine();
+
+        Jogador jogador;
+        if (opcao == 2) {
+            jogador = Persistencia.carregarJogo("save_cliente.txt");
+            if (jogador == null) {
+                System.out.println("Falha ao carregar. Iniciando novo jogo...");
+                jogador = new Jogador("Cliente", 10, 10);
+                autoPosicionar(jogador);
+            } else {
+                System.out.println("Jogo carregado com sucesso!");
+            }
+        } else {
+            jogador = new Jogador("Cliente", 10, 10);
+            autoPosicionar(jogador);
+        }
+
         try (Socket socket = new Socket("localhost", 12345)) {
             System.out.println("Conectado ao servidor!");
 
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            Scanner scanner = new Scanner(System.in);
 
-            Jogador jogador = new Jogador("Cliente", 10, 10);
-            autoPosicionar(jogador);
-
-            int pontos = 0;
+            int pontos = jogador.getPontuacao();
 
             while (true) {
                 // === ATAQUE ===
                 System.out.println("\nSeu mapa de ataque:");
                 jogador.getMapa().exibirMapaVisivel();
 
-                System.out.print("Digite coordenadas para atacar (ex: 2,4): ");
+                System.out.print("Digite coordenadas para atacar (ex: 2,4) ou 'sair': ");
                 String coords = scanner.nextLine();
+                if (coords.equalsIgnoreCase("sair")) {
+                    out.println("fim");
+                    System.out.println("Encerrando manualmente...");
+                    break;
+                }
+
                 out.println(coords);
 
                 String result = in.readLine();
@@ -37,7 +62,12 @@ public class Cliente {
 
                 System.out.println("Resultado do seu ataque: " + result);
                 if (result.equalsIgnoreCase("Acertou")) pontos++;
+
+                jogador.setPontuacao(pontos);
+                Persistencia.salvarJogo(jogador, "save_cliente.txt");
+                System.out.println("Jogo salvo em save_cliente.txt");
                 System.out.println("Pontuação atual: " + pontos);
+
                 if (pontos >= 5) {
                     System.out.println("Você venceu!");
                     out.println("fim");
@@ -51,13 +81,16 @@ public class Cliente {
                 String ataque = in.readLine();
                 if (ataque == null || ataque.equals("fim")) break;
 
-                System.out.println("Jogador remoto atacou: " + ataque);
+                System.out.println("Servidor atacou: " + ataque);
 
                 int x = Integer.parseInt(ataque.split(",")[0]);
                 int y = Integer.parseInt(ataque.split(",")[1]);
 
                 boolean acerto = jogador.getMapa().atacar(x, y);
                 out.println(acerto ? "Acertou" : "Errou");
+
+                Persistencia.salvarJogo(jogador, "save_cliente.txt");
+                System.out.println("Jogo salvo após defesa.");
             }
 
             System.out.println("Conexão encerrada.");

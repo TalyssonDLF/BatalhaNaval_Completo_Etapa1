@@ -120,4 +120,12 @@ public class Mapa {
     public char[][] getInterno() {
         return mapaInterno;
     }
+
+    public void setVisivel(char[][] visivel) {
+        this.mapaVisivel = visivel;
+    }
+    
+    public void setInterno(char[][] interno) {
+        this.mapaInterno = interno;
+    }
 }
